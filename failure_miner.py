@@ -1,19 +1,15 @@
-"""Auto-mine failure cases from the pipeline.
-
-Flags frames with:
-  - >=2 low-confidence detections (conf < 0.45)
-  - >=1 lost track ID (present in prev frame, gone in current, lifetime >= 3)
-
-Saves flagged frames to assets/failures/ for manual review.
-"""
+"""Auto-mine failure cases. Tracker via TRACKER env var (default: bytetrack)."""
 import os
 from collections import defaultdict
 
 import cv2
 from ultralytics import YOLO
 
+TRACKER = os.environ.get("TRACKER", "bytetrack")
+TRACKER_CFG = f"./{TRACKER}.yaml"
+
 VIDEO = "input.mp4"
-OUT_DIR = "assets/failures"
+OUT_DIR = f"assets/failures_{TRACKER}"
 CONF_THRESHOLD = 0.45
 MIN_LOW_CONF = 2
 DET_WEIGHTS = "yolov8s.pt"
@@ -25,12 +21,12 @@ prev_ids = set()
 flagged = []
 id_lifetimes = defaultdict(int)
 
-print(f"Mining failure cases from {VIDEO}...")
+print(f"Mining failures from {VIDEO} with tracker={TRACKER}...")
 
 for i, r in enumerate(
     yolo.track(
         source=VIDEO,
-        tracker="./bytetrack.yaml",
+        tracker=TRACKER_CFG,
         stream=True,
         classes=[0],
         verbose=False,

@@ -1,18 +1,24 @@
-"""End-to-end perception pipeline: YOLOv8 detection + ByteTrack tracking + MobileSAM segmentation.
+"""End-to-end perception pipeline: YOLOv8 detection + tracker + MobileSAM segmentation.
 
-Reads input.mp4, runs detection + tracking + per-track segmentation,
-writes annotated video to outputs/demo.mp4.
+Tracker is configurable via TRACKER env var (default: bytetrack).
+Outputs go to outputs/demo_<tracker>.mp4 so both runs are preserved.
 """
+import os
 import cv2
 import numpy as np
 from ultralytics import YOLO
 from mobile_sam import sam_model_registry, SamPredictor
 
+TRACKER = os.environ.get("TRACKER", "bytetrack")  # "bytetrack" or "botsort"
+TRACKER_CFG = f"./{TRACKER}.yaml"
+
 VIDEO_IN = "input.mp4"
-VIDEO_OUT = "outputs/demo.mp4"
+VIDEO_OUT = f"outputs/demo_{TRACKER}.mp4"
 SAM_CKPT = "mobile_sam.pt"
 DEVICE = "cuda"
 DET_WEIGHTS = "yolov8s.pt"
+
+print(f"Tracker: {TRACKER}  (config: {TRACKER_CFG})")
 
 # Load models
 print(f"Loading {DET_WEIGHTS}...")
@@ -24,12 +30,10 @@ predictor = SamPredictor(sam)
 
 
 def color_for_id(tid):
-    """Deterministic color per track ID."""
     np.random.seed(int(tid))
     return tuple(int(x) for x in np.random.randint(50, 255, 3))
 
 
-# Read video metadata
 cap = cv2.VideoCapture(VIDEO_IN)
 w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -43,14 +47,17 @@ writer = cv2.VideoWriter(
 
 print(f"Processing {total} frames at {w}x{h} @ {fps:.1f} FPS...")
 
-# Stream through video with ByteTrack (custom tuned config)
+# Stats for comparison
+total_dets = 0
+unique_ids = set()
+
 for i, r in enumerate(
     yolo.track(
         source=VIDEO_IN,
-        tracker="./bytetrack.yaml",
+        tracker=TRACKER_CFG,
         stream=True,
         persist=True,
-        classes=[0],  # person only
+        classes=[0],
         verbose=False,
     )
 ):
@@ -63,7 +70,9 @@ for i, r in enumerate(
     boxes = r.boxes.xyxy.cpu().numpy()
     ids = r.boxes.id.cpu().numpy().astype(int)
 
-    # Prompt MobileSAM with each tracked box
+    total_dets += len(ids)
+    unique_ids.update(ids.tolist())
+
     predictor.set_image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
     for box, tid in zip(boxes, ids):
@@ -71,12 +80,10 @@ for i, r in enumerate(
         mask = masks[0]
         color = color_for_id(tid)
 
-        # Overlay mask
         overlay = frame.copy()
         overlay[mask] = color
         frame = cv2.addWeighted(overlay, 0.5, frame, 0.5, 0)
 
-        # Box + ID label
         x1, y1, x2, y2 = box.astype(int)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
         cv2.putText(
@@ -90,4 +97,7 @@ for i, r in enumerate(
         print(f"  frame {i + 1}/{total}")
 
 writer.release()
-print(f"Done. Output: {VIDEO_OUT}")
+print(f"\nDone. Output: {VIDEO_OUT}")
+print(f"Total detections: {total_dets}")
+print(f"Unique track IDs assigned: {len(unique_ids)}")
+print(f"Avg detections per unique ID: {total_dets / max(len(unique_ids), 1):.1f}")
