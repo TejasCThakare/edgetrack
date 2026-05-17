@@ -127,6 +127,8 @@ Samples are stored per-tracker in `assets/failures_bytetrack/` and `assets/failu
 
 Same frame index from both pipelines, illustrating that the failures persist across tracker choice when ReID is disabled.
 
+> **Note on reading these:** each screenshot is the frame where the heuristic flagged a failure (a track ID was lost). Tracking failures are inherently temporal — a single frame cannot fully visualize *which* ID was lost or *what* changed. A complete diagnostic artifact would require N−1 / N frame pairs or short clips around each event; that is a planned harness improvement. The frames are included here as anchors into the failure timeline rather than as standalone visual proofs.
+
 | ByteTrack — frame 27 | BoT-SORT — frame 27 |
 |---|---|
 | ![bytetrack failure](assets/failures_bytetrack/frame_00027.jpg) | ![botsort failure](assets/failures_botsort/frame_00027.jpg) |
