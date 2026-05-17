@@ -22,21 +22,13 @@ Each tracked person is overlaid with a MobileSAM-generated instance mask, color-
 
 ## Architecture
 
-​```
-Video Stream
-    │
-    ▼
-YOLOv8s detection  ──  COCO-pretrained, person class filtered at runtime
-    │
-    ▼
-Tracker  ──  ByteTrack | BoT-SORT  (switchable via TRACKER env var)
-    │           track_buffer = 60 (extended from default 30 for ≤2 s occlusions)
-    ▼
-MobileSAM ViT-Tiny  ──  box-prompted instance mask per tracked ID
-    │
-    ▼
-Annotated Output  ──  consistent color per ID across frames
-​```
+```mermaid
+flowchart TD
+    A[Video Stream] --> B["YOLOv8s detection<br/><sub>COCO-pretrained, person class filtered at runtime</sub>"]
+    B --> C["Tracker: ByteTrack | BoT-SORT<br/><sub>switchable via TRACKER env var<br/>track_buffer = 60 (extended from default 30 for ≤2 s occlusions)</sub>"]
+    C --> D["MobileSAM ViT-Tiny<br/><sub>box-prompted instance mask per tracked ID</sub>"]
+    D --> E["Annotated Output<br/><sub>consistent color per ID across frames</sub>"]
+```
 
 Tracker selection is a one-line env switch so all five experiments — `pipeline`, `validate`, `export`, `benchmark`, `failure_miner` — share a single codebase.
 
@@ -145,7 +137,7 @@ Modes 1, 2, 3 are the structurally important ones. They are precisely what motiv
 
 ## Run
 
-​```bash
+```bash
 pip install -r requirements.txt
 wget https://github.com/ChaoningZhang/MobileSAM/raw/master/weights/mobile_sam.pt
 # place input video as input.mp4 in repo root
@@ -159,7 +151,7 @@ python benchmark.py
 
 TRACKER=bytetrack python failure_miner.py
 TRACKER=botsort   python failure_miner.py
-​```
+```
 
 Tested on Kaggle T4 GPU with Python 3.12, PyTorch 2.10, Ultralytics 8.4.51.
 
