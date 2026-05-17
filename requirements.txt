@@ -1,0 +1,6 @@
+ultralytics==8.2.0
+onnx
+onnxruntime-gpu
+opencv-python
+numpy
+git+https://github.com/ChaoningZhang/MobileSAM.git
