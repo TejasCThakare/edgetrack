@@ -24,10 +24,27 @@ Each tracked person is overlaid with a MobileSAM-generated instance mask, color-
 
 ```mermaid
 flowchart TD
-    A[Video Stream] --> B["YOLOv8s detection<br/><sub>COCO-pretrained, person class filtered at runtime</sub>"]
-    B --> C["Tracker: ByteTrack | BoT-SORT<br/><sub>switchable via TRACKER env var<br/>track_buffer = 60 (extended from default 30 for ≤2 s occlusions)</sub>"]
-    C --> D["MobileSAM ViT-Tiny<br/><sub>box-prompted instance mask per tracked ID</sub>"]
-    D --> E["Annotated Output<br/><sub>consistent color per ID across frames</sub>"]
+    A[Video Stream] --> B
+    B --> C
+    C --> D
+    D --> E
+
+    B["<b>YOLOv8s detection</b>
+    COCO-pretrained
+    person class filtered at runtime"]
+
+    C["<b>Tracker: ByteTrack | BoT-SORT</b>
+    switchable via TRACKER env var
+    track_buffer = 60
+    extended from default 30 for ≤2 s occlusions"]
+
+    D["<b>MobileSAM ViT-Tiny</b>
+    box-prompted instance mask
+    per tracked ID"]
+
+    E["<b>Annotated Output</b>
+    consistent color per ID
+    across frames"]
 ```
 
 Tracker selection is a one-line env switch so all five experiments — `pipeline`, `validate`, `export`, `benchmark`, `failure_miner` — share a single codebase.
