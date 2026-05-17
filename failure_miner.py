@@ -2,7 +2,7 @@
 
 Flags frames with:
   - >=2 low-confidence detections (conf < 0.45)
-  - >=1 lost track ID (present in prev frame, gone in current)
+  - >=1 lost track ID (present in prev frame, gone in current, lifetime >= 3)
 
 Saves flagged frames to assets/failures/ for manual review.
 """
@@ -16,9 +16,10 @@ VIDEO = "input.mp4"
 OUT_DIR = "assets/failures"
 CONF_THRESHOLD = 0.45
 MIN_LOW_CONF = 2
+DET_WEIGHTS = "yolov8s.pt"
 
 os.makedirs(OUT_DIR, exist_ok=True)
-yolo = YOLO("yolov8n.pt")
+yolo = YOLO(DET_WEIGHTS)
 
 prev_ids = set()
 flagged = []
@@ -29,7 +30,7 @@ print(f"Mining failure cases from {VIDEO}...")
 for i, r in enumerate(
     yolo.track(
         source=VIDEO,
-        tracker="bytetrack.yaml",
+        tracker="./bytetrack.yaml",
         stream=True,
         classes=[0],
         verbose=False,
@@ -46,7 +47,6 @@ for i, r in enumerate(
 
     low_conf_count = int((confs < CONF_THRESHOLD).sum())
     lost_ids = prev_ids - ids
-    # Only flag "lost" if the lost ID had survived a few frames (not a one-frame blip)
     real_lost = sum(1 for tid in lost_ids if id_lifetimes[tid] >= 3)
 
     reasons = []

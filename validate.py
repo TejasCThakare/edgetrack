@@ -1,8 +1,10 @@
-"""Validate YOLOv8n detector on COCO128 — produces mAP numbers for README."""
+"""Validate YOLOv8s detector on COCO128 — produces mAP numbers for README."""
 from ultralytics import YOLO
 
-print("Loading YOLOv8n...")
-model = YOLO("yolov8n.pt")
+DET_WEIGHTS = "yolov8s.pt"
+
+print(f"Loading {DET_WEIGHTS}...")
+model = YOLO(DET_WEIGHTS)
 
 print("Running validation on COCO128...")
 metrics = model.val(data="coco128.yaml", imgsz=640, verbose=True)

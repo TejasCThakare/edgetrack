@@ -12,10 +12,11 @@ VIDEO_IN = "input.mp4"
 VIDEO_OUT = "outputs/demo.mp4"
 SAM_CKPT = "mobile_sam.pt"
 DEVICE = "cuda"
+DET_WEIGHTS = "yolov8s.pt"
 
 # Load models
-print("Loading YOLOv8n...")
-yolo = YOLO("yolov8n.pt")
+print(f"Loading {DET_WEIGHTS}...")
+yolo = YOLO(DET_WEIGHTS)
 
 print("Loading MobileSAM...")
 sam = sam_model_registry["vit_t"](checkpoint=SAM_CKPT).to(DEVICE).eval()
@@ -28,7 +29,7 @@ def color_for_id(tid):
     return tuple(int(x) for x in np.random.randint(50, 255, 3))
 
 
-# Setup video writer
+# Read video metadata
 cap = cv2.VideoCapture(VIDEO_IN)
 w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -42,15 +43,14 @@ writer = cv2.VideoWriter(
 
 print(f"Processing {total} frames at {w}x{h} @ {fps:.1f} FPS...")
 
-# Stream through video with built-in ByteTrack tracker
-# classes=[0] = person; remove to track all COCO classes
+# Stream through video with ByteTrack (custom tuned config)
 for i, r in enumerate(
     yolo.track(
         source=VIDEO_IN,
-        tracker="bytetrack.yaml",
+        tracker="./bytetrack.yaml",
         stream=True,
         persist=True,
-        classes=[0],
+        classes=[0],  # person only
         verbose=False,
     )
 ):
@@ -81,7 +81,7 @@ for i, r in enumerate(
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
         cv2.putText(
             frame, f"ID {tid}", (x1, max(y1 - 8, 15)),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2,
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2,
         )
 
     writer.write(frame)

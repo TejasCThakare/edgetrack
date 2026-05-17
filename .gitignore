@@ -6,6 +6,7 @@ outputs/
 *.onnx
 *.pt
 runs/
+datasets/
 .ipynb_checkpoints/
 .DS_Store
 *.zip
